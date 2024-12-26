@@ -20,7 +20,7 @@ application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
 # Funciones de Telegram
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    print("Comando /start recibido")  # Log
+    print("Comando /start recibido")
     await update.message.reply_text("¡Hola! Soy un bot con inteligencia artificial. Envíame un mensaje y te responderé.")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -28,6 +28,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     print(f"Mensaje recibido del usuario: {user_message}")  # Log
 
     try:
+        print("Llamando a Hugging Face...")
         response = query_huggingface(user_message)
         print(f"Respuesta generada por Hugging Face: {response}")  # Log
         await update.message.reply_text(response)
@@ -39,7 +40,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 def query_huggingface(prompt):
     headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
     payload = {"inputs": prompt}
-    print(f"Enviando consulta a Hugging Face: {prompt}")  # Log
+    print(f"Enviando consulta a Hugging Face con el mensaje: {prompt}")  # Log
 
     response = requests.post(HF_API_URL, headers=headers, json=payload)
     print(f"Respuesta de Hugging Face: {response.status_code}, {response.text}")  # Log completo
@@ -77,7 +78,9 @@ async def initialize_and_process_update(update):
     """Inicializa la aplicación y procesa la actualización."""
     print("Inicializando y procesando la actualización de Telegram")  # Log
     await application.initialize()
+    print("Aplicación inicializada")  # Log
     await application.process_update(update)
+    print("Actualización procesada")  # Log
     await application.shutdown()
 
 if __name__ == "__main__":
@@ -94,4 +97,5 @@ if __name__ == "__main__":
     PORT = int(os.environ.get("PORT", 5000))  # Render asigna el puerto a través de esta variable de entorno
     print(f"Ejecutando Flask en el puerto {PORT}")  # Log
     app.run(host="0.0.0.0", port=PORT)
+
 
