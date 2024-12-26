@@ -1,6 +1,7 @@
 from flask import Flask, request
 import os
 import requests
+import asyncio
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 
@@ -56,7 +57,7 @@ def telegram_webhook():
     """Procesa las actualizaciones enviadas por Telegram al webhook."""
     try:
         update = Update.de_json(request.get_json(force=True), application.bot)
-        application.process_update(update)
+        asyncio.run(application.process_update(update))  # Ejecuta la corutina correctamente
         return "OK", 200
     except Exception as e:
         print(f"Error procesando la actualización de Telegram: {e}")
@@ -68,7 +69,7 @@ if __name__ == "__main__":
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     # Configurar el webhook en Telegram
-    webhook_url = f"https://chatbot-cwi2.onrender.com/{TELEGRAM_TOKEN}"  # Cambia <YOUR_RENDER_URL> por tu URL de Render
+    webhook_url = f"https://chatbot-cwi2.onrender.com/{TELEGRAM_TOKEN}"  # Reemplaza <YOUR_RENDER_URL> con tu URL de Render
     response = requests.get(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/setWebhook?url={webhook_url}")
     print("Respuesta del webhook:", response.json())
 
