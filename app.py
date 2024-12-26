@@ -59,7 +59,7 @@ if __name__ == "__main__":
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     # Configurar el webhook en Telegram
-    webhook_url = f"https://<YOUR_RENDER_URL>/{TELEGRAM_TOKEN}"  # Reemplaza <YOUR_RENDER_URL> con tu URL de Render
+    webhook_url = f"https://chatbot-cwi2.onrender.com/{TELEGRAM_TOKEN}"  # Reemplaza <YOUR_RENDER_URL> con tu URL de Render
     response = requests.get(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/setWebhook?url={webhook_url}")
     print("Respuesta del webhook:", response.json())
 
