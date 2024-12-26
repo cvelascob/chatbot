@@ -1,6 +1,6 @@
 from flask import Flask, request
 import os
-import requests
+import httpx
 import asyncio
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
@@ -39,13 +39,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 async def query_huggingface(prompt):
     headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
     payload = {
-        "inputs": f"Usuario: {prompt}\\nBot:",
+        "inputs": f"Usuario: {prompt}\nBot:",
         "parameters": {"max_length": 50, "temperature": 0.7, "top_p": 0.9},
     }
     print(f"Enviando consulta a Hugging Face: {prompt}")
 
-    async with requests.Session() as session:
-        response = session.post(HF_API_URL, headers=headers, json=payload)
+    async with httpx.AsyncClient() as client:
+        response = await client.post(HF_API_URL, headers=headers, json=payload)
         print(f"Respuesta de Hugging Face: {response.status_code}, {response.text}")
 
     if response.status_code == 200:
@@ -85,7 +85,7 @@ async def initialize_and_process_update(update):
 
 if __name__ == "__main__":
     webhook_url = f"https://chatbot-cwi2.onrender.com/{TELEGRAM_TOKEN}"
-    response = requests.get(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/setWebhook?url={webhook_url}")
+    response = httpx.get(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/setWebhook?url={webhook_url}")
     print("Respuesta del webhook:", response.json())
 
     PORT = int(os.environ.get("PORT", 5000))
