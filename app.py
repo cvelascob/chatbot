@@ -24,31 +24,29 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text("¡Hola! Soy un bot con inteligencia artificial. Envíame un mensaje y te responderé.")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if update.message is None:
-        print("No se recibió un mensaje válido.")
-        return
     user_message = update.message.text
     print(f"Mensaje recibido del usuario: {user_message}")
 
     try:
-        response = query_huggingface(user_message)
+        response = await query_huggingface(user_message)
         print(f"Respuesta generada por Hugging Face: {response}")
         await update.message.reply_text(response)
     except Exception as e:
         print(f"Error al procesar el mensaje: {e}")
         await update.message.reply_text("Lo siento, hubo un error al procesar tu mensaje. Intenta nuevamente.")
 
-# Función para consultar Hugging Face
-def query_huggingface(prompt):
+# Función asincrónica para consultar Hugging Face
+async def query_huggingface(prompt):
     headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
     payload = {
-        "inputs": f"Usuario: {prompt}\nBot:",
+        "inputs": f"Usuario: {prompt}\\nBot:",
         "parameters": {"max_length": 50, "temperature": 0.7, "top_p": 0.9},
     }
     print(f"Enviando consulta a Hugging Face: {prompt}")
 
-    response = requests.post(HF_API_URL, headers=headers, json=payload)
-    print(f"Respuesta de Hugging Face: {response.status_code}, {response.text}")
+    async with requests.Session() as session:
+        response = session.post(HF_API_URL, headers=headers, json=payload)
+        print(f"Respuesta de Hugging Face: {response.status_code}, {response.text}")
 
     if response.status_code == 200:
         data = response.json()
@@ -79,11 +77,6 @@ def telegram_webhook():
 
 async def initialize_and_process_update(update):
     print("Inicializando y procesando la actualización de Telegram")
-    loop = asyncio.get_event_loop()
-    if loop.is_closed():
-        print("Creando un nuevo ciclo de eventos...")
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
     await application.initialize()
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
@@ -95,8 +88,6 @@ if __name__ == "__main__":
     response = requests.get(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/setWebhook?url={webhook_url}")
     print("Respuesta del webhook:", response.json())
 
-    PORT = int(os.environ.get("PORT", 10000))
+    PORT = int(os.environ.get("PORT", 5000))
     print(f"Ejecutando Flask en el puerto {PORT}")
     app.run(host="0.0.0.0", port=PORT)
-
-
