@@ -2,6 +2,7 @@ from flask import Flask, request
 import os
 import httpx
 import asyncio
+from time import sleep
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 
@@ -38,23 +39,25 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 # Función asincrónica para consultar Hugging Face
 async def query_huggingface(prompt):
     headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
-    payload = {
-        "inputs": f"Usuario: {prompt}\nBot:",
-        "parameters": {"max_length": 50, "temperature": 0.7, "top_p": 0.9},
-    }
-    print(f"Enviando consulta a Hugging Face: {prompt}")
+    payload = {"inputs": f"Usuario: {prompt}\nBot:"}
 
-    async with httpx.AsyncClient() as client:
-        response = await client.post(HF_API_URL, headers=headers, json=payload)
-        print(f"Respuesta de Hugging Face: {response.status_code}, {response.text}")
+    for _ in range(3):  # Intentar hasta 3 veces
+        async with httpx.AsyncClient() as client:
+            response = await client.post(HF_API_URL, headers=headers, json=payload)
+            print(f"Respuesta de Hugging Face: {response.status_code}, {response.text}")
 
-    if response.status_code == 200:
-        data = response.json()
-        if isinstance(data, list) and len(data) > 0 and "generated_text" in data[0]:
-            return data[0]["generated_text"]
-        return "Lo siento, no entendí tu mensaje."
-    else:
-        raise Exception(f"Error en Hugging Face API: {response.status_code}, {response.text}")
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list) and len(data) > 0 and "generated_text" in data[0]:
+                    return data[0]["generated_text"]
+                return "Lo siento, no entendí tu mensaje."
+            elif response.status_code == 503:
+                print("El modelo está cargando, esperando 10 segundos antes de reintentar...")
+                await asyncio.sleep(10)
+            else:
+                raise Exception(f"Error en Hugging Face API: {response.status_code}, {response.text}")
+
+    raise Exception("Error: No se pudo obtener una respuesta después de varios intentos.")
 
 # Servidor Flask
 app = Flask(__name__)
@@ -69,7 +72,7 @@ def telegram_webhook():
     print("Actualización POST recibida desde Telegram")
     try:
         update = Update.de_json(request.get_json(force=True), application.bot)
-        asyncio.run(initialize_and_process_update(update))
+        asyncio.create_task(initialize_and_process_update(update))
         return "OK", 200
     except Exception as e:
         print(f"Error procesando la actualización de Telegram: {e}")
@@ -91,3 +94,4 @@ if __name__ == "__main__":
     PORT = int(os.environ.get("PORT", 5000))
     print(f"Ejecutando Flask en el puerto {PORT}")
     app.run(host="0.0.0.0", port=PORT)
+    
