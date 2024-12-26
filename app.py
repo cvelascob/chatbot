@@ -46,12 +46,21 @@ def query_huggingface(prompt):
 # Servidor Flask
 app = Flask(__name__)
 
+@app.route("/", methods=["GET"])
+def health_check():
+    """Verifica que el servidor esté funcionando."""
+    return "El bot está funcionando correctamente.", 200
+
 @app.route(f"/{TELEGRAM_TOKEN}", methods=["POST"])
 def telegram_webhook():
     """Procesa las actualizaciones enviadas por Telegram al webhook."""
-    update = Update.de_json(request.get_json(force=True), application.bot)
-    application.process_update(update)
-    return "OK", 200
+    try:
+        update = Update.de_json(request.get_json(force=True), application.bot)
+        application.process_update(update)
+        return "OK", 200
+    except Exception as e:
+        print(f"Error procesando la actualización de Telegram: {e}")
+        return "ERROR", 500
 
 if __name__ == "__main__":
     # Agregar manejadores a la aplicación de Telegram
@@ -59,10 +68,10 @@ if __name__ == "__main__":
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     # Configurar el webhook en Telegram
-    webhook_url = f"https://chatbot-cwi2.onrender.com/{TELEGRAM_TOKEN}"  # Reemplaza <YOUR_RENDER_URL> con tu URL de Render
+    webhook_url = f"https://chatbot-cwi2.onrender.com/{TELEGRAM_TOKEN}"  # Cambia <YOUR_RENDER_URL> por tu URL de Render
     response = requests.get(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/setWebhook?url={webhook_url}")
     print("Respuesta del webhook:", response.json())
 
     # Ejecutar el servidor Flask
-    PORT = int(os.environ.get("PORT", 5000))
+    PORT = int(os.environ.get("PORT", 5000))  # Render asigna el puerto a través de esta variable de entorno
     app.run(host="0.0.0.0", port=PORT)
