@@ -4,7 +4,7 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 
 # Hugging Face API Settings
-HF_API_TOKEN = os.getenv("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")  # Tu token de Hugging Face
+HF_API_TOKEN = os.getenv("")  # Tu token de Hugging Face
 HF_MODEL = "microsoft/DialoGPT-medium"    # Modelo que deseas usar
 HF_API_URL = f"https://api-inference.huggingface.co/models/{HF_MODEL}"
 
