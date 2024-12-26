@@ -41,7 +41,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 # Función para consultar Hugging Face
 def query_huggingface(prompt):
     headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
-    payload = {"inputs": prompt}
+    payload = {
+        "inputs": f"Usuario: {prompt}\nBot:",
+        "parameters": {"max_length": 50, "temperature": 0.7, "top_p": 0.9},
+    }
     print(f"Enviando consulta a Hugging Face: {prompt}")
 
     response = requests.post(HF_API_URL, headers=headers, json=payload)
@@ -49,9 +52,9 @@ def query_huggingface(prompt):
 
     if response.status_code == 200:
         data = response.json()
-        if isinstance(data, list) and len(data) > 0:
+        if isinstance(data, list) and len(data) > 0 and "generated_text" in data[0]:
             return data[0]["generated_text"]
-        return "No entendí tu mensaje."
+        return "Lo siento, no entendí tu mensaje."
     else:
         raise Exception(f"Error en Hugging Face API: {response.status_code}, {response.text}")
 
@@ -76,6 +79,11 @@ def telegram_webhook():
 
 async def initialize_and_process_update(update):
     print("Inicializando y procesando la actualización de Telegram")
+    loop = asyncio.get_event_loop()
+    if loop.is_closed():
+        print("Creando un nuevo ciclo de eventos...")
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
     await application.initialize()
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
@@ -90,6 +98,5 @@ if __name__ == "__main__":
     PORT = int(os.environ.get("PORT", 5000))
     print(f"Ejecutando Flask en el puerto {PORT}")
     app.run(host="0.0.0.0", port=PORT)
-
 
 
