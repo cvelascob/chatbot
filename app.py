@@ -95,7 +95,7 @@ if __name__ == "__main__":
     response = requests.get(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/setWebhook?url={webhook_url}")
     print("Respuesta del webhook:", response.json())
 
-    PORT = int(os.environ.get("PORT", 5000))
+    PORT = int(os.environ.get("PORT", 10000))
     print(f"Ejecutando Flask en el puerto {PORT}")
     app.run(host="0.0.0.0", port=PORT)
 
