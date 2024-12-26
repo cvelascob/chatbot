@@ -3,3 +3,4 @@ transformers
 flask
 requests
 python-telegram-bot
+gunicorn
