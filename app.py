@@ -57,11 +57,18 @@ def telegram_webhook():
     """Procesa las actualizaciones enviadas por Telegram al webhook."""
     try:
         update = Update.de_json(request.get_json(force=True), application.bot)
-        asyncio.run(application.process_update(update))  # Ejecuta la corutina correctamente
+        # Inicializar manualmente la aplicación antes de procesar la actualización
+        asyncio.run(initialize_and_process_update(update))
         return "OK", 200
     except Exception as e:
         print(f"Error procesando la actualización de Telegram: {e}")
         return "ERROR", 500
+
+async def initialize_and_process_update(update):
+    """Inicializa la aplicación y procesa la actualización."""
+    await application.initialize()  # Inicializar la aplicación
+    await application.process_update(update)  # Procesar la actualización
+    await application.shutdown()  # Apagar la aplicación después de procesar
 
 if __name__ == "__main__":
     # Agregar manejadores a la aplicación de Telegram
@@ -69,7 +76,7 @@ if __name__ == "__main__":
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     # Configurar el webhook en Telegram
-    webhook_url = f"https://chatbot-cwi2.onrender.com/{TELEGRAM_TOKEN}"  # Reemplaza <YOUR_RENDER_URL> con tu URL de Render
+    webhook_url = f"https://chatbot-cwi2.onrender.com/{TELEGRAM_TOKEN}"  # Cambia <YOUR_RENDER_URL> por tu URL de Render
     response = requests.get(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/setWebhook?url={webhook_url}")
     print("Respuesta del webhook:", response.json())
 
