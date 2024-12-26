@@ -2,7 +2,6 @@ from flask import Flask, request
 import os
 import httpx
 import asyncio
-from time import sleep
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 
@@ -72,13 +71,13 @@ def telegram_webhook():
     print("Actualización POST recibida desde Telegram")
     try:
         update = Update.de_json(request.get_json(force=True), application.bot)
-        asyncio.create_task(initialize_and_process_update(update))
+        asyncio.run(process_update(update))
         return "OK", 200
     except Exception as e:
         print(f"Error procesando la actualización de Telegram: {e}")
         return "ERROR", 500
 
-async def initialize_and_process_update(update):
+async def process_update(update):
     print("Inicializando y procesando la actualización de Telegram")
     await application.initialize()
     application.add_handler(CommandHandler("start", start))
@@ -87,11 +86,12 @@ async def initialize_and_process_update(update):
     print("Actualización procesada")
 
 if __name__ == "__main__":
+    # Configurar el webhook en Telegram
     webhook_url = f"https://chatbot-cwi2.onrender.com/{TELEGRAM_TOKEN}"
     response = httpx.get(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/setWebhook?url={webhook_url}")
     print("Respuesta del webhook:", response.json())
 
+    # Ejecutar el servidor Flask
     PORT = int(os.environ.get("PORT", 5000))
     print(f"Ejecutando Flask en el puerto {PORT}")
-    app.run(host="0.0.0.0", port=PORT)
-    
+    app.run(host="0.0.0.0", port=PORT)    
